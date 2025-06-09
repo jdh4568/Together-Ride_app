@@ -8,7 +8,18 @@ class GroupPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("그룹 관리 화면"),centerTitle: true,),
-      body: Center(child: Container(height: double.infinity, width: double.infinity, color: Colors.red,),),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xffB3E5FC),
+              Color(0xff6BF8F3),
+            ],
+          ),
+        ),
+      )
     );
   }
 }
