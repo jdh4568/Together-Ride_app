@@ -8,6 +8,7 @@ class UserModel {
   final bool isLeader;
   final bool isFrontRider;
   final bool inGroup;
+  final int point;
 
   UserModel({
     required this.email,
@@ -17,6 +18,7 @@ class UserModel {
     required this.isLeader,
     required this.isFrontRider,
     required this.inGroup,
+    required this.point
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -28,6 +30,7 @@ class UserModel {
       isLeader: data['isLeader'] ?? false,
       isFrontRider: data['isFrontRider'] ?? false,
       inGroup: data['inGroup'] ?? false,
+      point: data['point'] ?? 0,
     );
   }
 
@@ -40,6 +43,7 @@ class UserModel {
       'isLeader': isLeader,
       'isFrontRider': isFrontRider,
       'inGroup': inGroup,
+      'point' : point,
     };
   }
 }

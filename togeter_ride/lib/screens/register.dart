@@ -53,12 +53,14 @@ class _RegisterState extends State<Register> {
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'email': id.text.trim(),
         'nickname': nickName.text.trim(),
-        'age': int.tryParse(age.text.trim()) ?? 0,
         'gender': genderOptions[selectedGenderIndex],
-        'isLeader': false,       // 기본값: 일반 사용자
-        'isFrontRider': false,   // 기본값: 일반 사용자
-        'inGroup' : false, // 그룹 가입 여부, 기본값 false
+        'age': int.tryParse(age.text.trim()) ?? 0,
+        'isLeader': false,
+        'isFrontRider': false,
+        'inGroup': false,
+        'point': 0, // 기본 포인트
       });
+
 
 
       // 3. 완료 처리

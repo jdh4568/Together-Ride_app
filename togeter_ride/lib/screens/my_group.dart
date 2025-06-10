@@ -108,7 +108,7 @@ class MyGroup extends StatelessWidget {
                                 crossAxisAlignment:
                                 CrossAxisAlignment.start,
                                 children: [
-                                  Text("나이: ${user.age}, 성별: ${user.gender}"),
+                                  Text("나이: ${user.age}, 성별: ${user.gender}, 포인트 : ${user.point}P"),
                                   Text("이메일: ${user.email}"),
                                 ],
                               ),
