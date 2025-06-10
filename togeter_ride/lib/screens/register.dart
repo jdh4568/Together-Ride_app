@@ -57,6 +57,7 @@ class _RegisterState extends State<Register> {
         'gender': genderOptions[selectedGenderIndex],
         'isLeader': false,       // 기본값: 일반 사용자
         'isFrontRider': false,   // 기본값: 일반 사용자
+        'inGroup' : false, // 그룹 가입 여부, 기본값 false
       });
 
 
@@ -80,6 +81,8 @@ class _RegisterState extends State<Register> {
     return Scaffold(
       appBar: AppBar(title: const Text("회원가입 페이지"), centerTitle: true),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -97,7 +100,18 @@ class _RegisterState extends State<Register> {
               margin: const EdgeInsets.only(top: 100),
               width: 300,
               padding: const EdgeInsets.all(16.0),
-              color: Colors.blue[200],
+              decoration: BoxDecoration(
+                color: Color(0xffF5F3F3),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 2,
+                    offset: Offset(0, 3), // changes position of shadow
+                  ),
+                ],
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

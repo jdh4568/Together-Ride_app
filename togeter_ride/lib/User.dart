@@ -5,6 +5,7 @@ class UserModel {
   final int age;
   final bool isLeader;       // 그룹장 여부
   final bool isFrontRider;   // 선두 라이더 여부
+  final bool inGroup;
 
   UserModel({
     required this.email,
@@ -13,6 +14,7 @@ class UserModel {
     required this.age,
     required this.isLeader,
     required this.isFrontRider,
+    required this.inGroup,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -23,6 +25,7 @@ class UserModel {
       age: data['age'] ?? 0,
       isLeader: data['isLeader'] ?? false,
       isFrontRider: data['isFrontRider'] ?? false,
+      inGroup: data['inGroup'] ?? false
     );
   }
 
@@ -34,6 +37,7 @@ class UserModel {
       'age': age,
       'isLeader': isLeader,
       'isFrontRider': isFrontRider,
+      'inGroup' : inGroup,
     };
   }
 }
