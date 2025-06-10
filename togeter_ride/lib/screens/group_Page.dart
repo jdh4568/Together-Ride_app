@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'post_page.dart';      // PostPage import
@@ -7,6 +8,7 @@ class GroupPage extends StatelessWidget {
   const GroupPage({super.key});
   void showGroupCreateDialog(BuildContext context) {
     final TextEditingController groupController = TextEditingController();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
     showDialog(
       context: context,
@@ -36,14 +38,29 @@ class GroupPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final groupName = groupController.text.trim();
-                    if (groupName.isNotEmpty) {
-                      Navigator.pop(context); // 팝업 닫기
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("그룹 '$groupName' 생성됨!")),
-                      );
-                      // Firestore에 그룹 저장 로직은 여기서 추가 가능
+
+                    if (groupName.isNotEmpty && uid != null) {
+                      try {
+                        // Firestore에 그룹 추가
+                        await FirebaseFirestore.instance.collection('groups').add({
+                          'groupName': groupName,
+                          'leaderUid': uid,
+                          'members': [],
+                          'createdAt': Timestamp.now(),
+                        });
+
+                        Navigator.pop(context); // 팝업 닫기
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("그룹 '$groupName' 생성 완료")),
+                        );
+                      } catch (e) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("에러 발생: ${e.toString()}")),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -60,6 +77,7 @@ class GroupPage extends StatelessWidget {
       },
     );
   }
+
 
 
   @override
