@@ -1,16 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class UserModel {
   final String email;
   final String nickname;
   final String gender;
   final int age;
+  final bool isLeader;       // 그룹장 여부
+  final bool isFrontRider;   // 선두 라이더 여부
 
   UserModel({
     required this.email,
     required this.nickname,
     required this.gender,
     required this.age,
+    required this.isLeader,
+    required this.isFrontRider,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -19,17 +21,19 @@ class UserModel {
       nickname: data['nickname'] ?? '',
       gender: data['gender'] ?? '',
       age: data['age'] ?? 0,
+      isLeader: data['isLeader'] ?? false,
+      isFrontRider: data['isFrontRider'] ?? false,
     );
   }
-}
 
-Future<UserModel?> fetchUserData(String uid) async {
-  DocumentSnapshot<Map<String, dynamic>> userDoc =
-  await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-  if (userDoc.exists && userDoc.data() != null) {
-    return UserModel.fromMap(userDoc.data()!);
-  } else {
-    return null;
+  Map<String, dynamic> toMap() {
+    return {
+      'email': email,
+      'nickname': nickname,
+      'gender': gender,
+      'age': age,
+      'isLeader': isLeader,
+      'isFrontRider': isFrontRider,
+    };
   }
 }

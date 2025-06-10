@@ -50,13 +50,15 @@ class _RegisterState extends State<Register> {
 
       String uid = userCredential.user!.uid;
 
-      // 2. Firestore에 추가 정보 저장
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'email': id.text.trim(),
         'nickname': nickName.text.trim(),
         'age': int.tryParse(age.text.trim()) ?? 0,
         'gender': genderOptions[selectedGenderIndex],
+        'isLeader': false,       // 기본값: 일반 사용자
+        'isFrontRider': false,   // 기본값: 일반 사용자
       });
+
 
       // 3. 완료 처리
       showMessage("회원가입 성공!");
