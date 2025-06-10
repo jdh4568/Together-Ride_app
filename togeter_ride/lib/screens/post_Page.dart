@@ -44,6 +44,8 @@ class PostPage extends StatelessWidget {
         },
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -53,8 +55,12 @@ class PostPage extends StatelessWidget {
         ),
         child: Center(
           child: Container(
-            width: 350,
-            color: Colors.white,
+            width: 400,
+            height: 700,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('posts')
