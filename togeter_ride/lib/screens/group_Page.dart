@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'post_page.dart';      // PostPage import
+import 'group_create.dart';  // GroupCreate import
 
 class GroupPage extends StatelessWidget {
   const GroupPage({super.key});
@@ -10,65 +12,94 @@ class GroupPage extends StatelessWidget {
       appBar: AppBar(title: const Text("그룹 관리 화면"), centerTitle: true),
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xffB3E5FC), Color(0xff6BF8F3)]),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xffB3E5FC), Color(0xff6BF8F3)],
+          ),
         ),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-
                 height: 100,
                 width: 300,
                 decoration: BoxDecoration(
-                  color: Color(0xffF5F3F3),
+                  color: const Color(0xffF5F3F3),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 2,
-                      offset: Offset(0, 3), // changes position of shadow
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                child: Center(child: Text("가입된 그룹이 없습니다.\n그룹 가입 또는, 그룹 생성을 해주세요."),),
+                child: const Center(
+                  child: Text(
+                    "가입된 그룹이 없습니다.\n그룹 가입 또는, 그룹 생성을 해주세요.",
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
-              SizedBox(height: 100,),
-              Container(
-                height: 100,
-                width: 200,
-                decoration: BoxDecoration(
-                  color: Color(0xffF5F3F3),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 2,
-                      offset: Offset(0, 3), // changes position of shadow
-                    ),
-                  ],
+              const SizedBox(height: 100),
+
+              // 👉 커뮤니티로 이동 버튼
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PostPage()),
+                  );
+                },
+                child: Container(
+                  height: 100,
+                  width: 200,
+                  decoration: BoxDecoration(
+                    color: const Color(0xffF5F3F3),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 2,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Center(child: Text("커뮤니티로 이동")),
                 ),
-                child: Center(child: Text("커뮤니티로 이동"),),
               ),
-              SizedBox(height: 50,),
-              Container(
-                height: 100,
-                width: 200,
-                decoration: BoxDecoration(
-                  color: Color(0xffF5F3F3),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 2,
-                      offset: Offset(0, 3), // changes position of shadow
-                    ),
-                  ],
+
+              const SizedBox(height: 50),
+
+              // 👉 그룹 생성 버튼
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const GroupCreate()),
+                  );
+                },
+                child: Container(
+                  height: 100,
+                  width: 200,
+                  decoration: BoxDecoration(
+                    color: const Color(0xffF5F3F3),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 2,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Center(child: Text("그룹 생성")),
                 ),
-                child: Center(child: Text("그룹 생성"),),
               ),
             ],
           ),

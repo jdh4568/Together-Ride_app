@@ -35,29 +35,39 @@ class MainScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => const RideReady()),
                   );
                 },
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue,
-                        spreadRadius: 5,
-                        blurRadius: 5,
-                        offset: Offset(0, 1), // changes position of shadow
-                      ),
-                    ],
-                    color: Color(0xffF5F3F3),
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle, // ← 원형으로 지정 (borderRadius보다 더 정확)
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.6), // 더 자연스러운 그림자 느낌
+                          spreadRadius: 8,
+                          blurRadius: 20,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
                       border: Border.all(
-                          color: Colors.blue,
-                          style: BorderStyle.solid,
-                          width: 5
+                        color: Colors.grey.shade300, // 바깥쪽 테두리 느낌용
+                        width: 2,
                       ),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text("라이딩 준비"),
-                ),
+                    ),
+                    child: Container(
+                      margin: const EdgeInsets.all(10), // 내부 원 효과
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xffF5F3F3),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        "라이딩 준비",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  )
+
               ),
               const SizedBox(height: 30),
 
