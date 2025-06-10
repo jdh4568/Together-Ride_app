@@ -1,10 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UserModel {
   final String email;
   final String nickname;
   final String gender;
   final int age;
-  final bool isLeader;       // 그룹장 여부
-  final bool isFrontRider;   // 선두 라이더 여부
+  final bool isLeader;
+  final bool isFrontRider;
   final bool inGroup;
 
   UserModel({
@@ -25,7 +27,7 @@ class UserModel {
       age: data['age'] ?? 0,
       isLeader: data['isLeader'] ?? false,
       isFrontRider: data['isFrontRider'] ?? false,
-      inGroup: data['inGroup'] ?? false
+      inGroup: data['inGroup'] ?? false,
     );
   }
 
@@ -37,7 +39,20 @@ class UserModel {
       'age': age,
       'isLeader': isLeader,
       'isFrontRider': isFrontRider,
-      'inGroup' : inGroup,
+      'inGroup': inGroup,
     };
   }
+}
+
+// Firestore에서 UID로 사용자 정보 읽어오는 헬퍼
+Future<UserModel?> fetchUserData(String uid) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .get();
+  if (doc.exists && doc.data() != null) {
+    // doc.data()는 Map<String, dynamic>
+    return UserModel.fromMap(doc.data()!);
+  }
+  return null;
 }

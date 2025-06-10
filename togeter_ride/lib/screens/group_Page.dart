@@ -5,6 +5,7 @@ import 'post_page.dart';      // PostPage import
 
 class GroupPage extends StatelessWidget {
   const GroupPage({super.key});
+
   void showGroupCreateDialog(BuildContext context) {
     final TextEditingController groupController = TextEditingController();
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -46,24 +47,25 @@ class GroupPage extends StatelessWidget {
                       return;
                     }
                     try {
-                      // 1. 그룹 문서 추가
+                      // 1. 그룹 문서 추가: members 배열에 리더 UID 포함
                       final groupDocRef = await FirebaseFirestore.instance
                           .collection('groups')
                           .add({
                         'groupName': groupName,
                         'leaderUid': uid,
-                        'members': [],       // 일단 빈 리스트
+                        'members': [uid],       // 리더를 배열에 포함
                         'createdAt': Timestamp.now(),
                       });
 
                       // 2. 사용자 문서 업데이트: inGroup, isLeader를 true로 변경
+                      //    SetOptions.merge 사용 시 기존 필드 보존 가능
                       await FirebaseFirestore.instance
                           .collection('users')
                           .doc(uid)
-                          .update({
+                          .set({
                         'inGroup': true,
                         'isLeader': true,
-                      });
+                      }, SetOptions(merge: true));
 
                       Navigator.pop(context); // 팝업 닫기
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,9 +92,6 @@ class GroupPage extends StatelessWidget {
       },
     );
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +133,7 @@ class GroupPage extends StatelessWidget {
               ),
               const SizedBox(height: 100),
 
-              // 👉 커뮤니티로 이동 버튼
+              // 커뮤니티로 이동 버튼
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -163,12 +162,11 @@ class GroupPage extends StatelessWidget {
 
               const SizedBox(height: 50),
 
-              // 👉 그룹 생성 버튼
+              // 그룹 생성 버튼
               GestureDetector(
                 onTap: () {
                   showGroupCreateDialog(context); // 팝업 띄우기
                 },
-
                 child: Container(
                   height: 100,
                   width: 200,
