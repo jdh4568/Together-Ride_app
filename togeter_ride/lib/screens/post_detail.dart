@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // 날짜 형식 변환용
+import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../User.dart'; // UserModel, fetchUserData 정의된 경로로 변경
+import '../User.dart';
 
 class PostDetailPage extends StatelessWidget {
   final String title;
@@ -21,12 +21,53 @@ class PostDetailPage extends StatelessWidget {
     required this.createdAt,
   });
 
-  // 현재 사용자 정보 불러오기
   Future<bool> _checkInGroup() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return false;
     final user = await fetchUserData(uid);
     return user?.inGroup ?? false;
+  }
+
+  Future<void> _sendJoinRequest(BuildContext context) async {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUid == null) return;
+    final currentUser = await fetchUserData(currentUid);
+    if (currentUser == null) return;
+
+    // 그룹장 UID 찾기 (email 기준)
+    final query = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    if (query.docs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("그룹장을 찾을 수 없습니다.")),
+      );
+      return;
+    }
+
+    final leaderDoc = query.docs.first;
+    final leaderUid = leaderDoc.id;
+
+    // 그룹장 하위 join_requests 서브컬렉션에 문서 추가
+    await FirebaseFirestore.instance
+        .collection('join_requests')
+        .doc(leaderUid)
+        .collection('messages')
+        .add({
+      'uid': currentUid,
+      'nickname': currentUser.nickname,
+      'gender': currentUser.gender,
+      'age': currentUser.age,
+      'point': currentUser.point,
+      'requestedAt': FieldValue.serverTimestamp(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("가입 신청이 전송되었습니다.")),
+    );
   }
 
   @override
@@ -35,26 +76,17 @@ class PostDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text("게시글 상세보기")),
-      // 버튼을 화면 하단 중앙에 띄우기 위해 지정
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FutureBuilder<bool>(
         future: _checkInGroup(),
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            // 로딩 중이거나 에러 시 버튼 숨김
             return const SizedBox.shrink();
           }
           final inGroup = snapshot.data ?? false;
           if (!inGroup) {
-            // 가입되어 있지 않으면 버튼 표시
             return FloatingActionButton.extended(
-              onPressed: () {
-                // 가입 신청 로직을 여기에 구현하세요.
-                // 예시: Firestore에 '가입 요청' 문서 추가 등
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("가입 신청 기능을 구현하세요.")),
-                );
-              },
+              onPressed: () => _sendJoinRequest(context),
               label: const Text("가입 신청하기"),
             );
           } else {
@@ -68,18 +100,14 @@ class PostDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title,
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold)),
+                style:
+                const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-
-            // 작성자 정보
             Text("작성자: $nickname ($email)",
                 style: const TextStyle(fontSize: 14, color: Colors.grey)),
             Text("작성일: $formattedDate",
                 style: const TextStyle(fontSize: 14, color: Colors.grey)),
             const Divider(height: 32),
-
-            // 내용
             Text(content, style: const TextStyle(fontSize: 16)),
           ],
         ),

@@ -74,11 +74,38 @@ class MainScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 라이딩 페이지 이동 버튼
+              // 라이딩 페이지 이동 버튼
               GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const RideReady()),
-                  );
+                onTap: () async {
+                  final uid = FirebaseAuth.instance.currentUser?.uid;
+                  if (uid == null) return;
+
+                  // Firestore에서 그룹 불러오기
+                  final query = await FirebaseFirestore.instance
+                      .collection('groups')
+                      .where('members', arrayContains: uid)
+                      .limit(1)
+                      .get();
+
+                  if (query.docs.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("가입된 그룹이 없습니다.")),
+                    );
+                    return;
+                  }
+
+                  final groupData = query.docs.first.data();
+                  final leaderUid = groupData['leaderUid'] ?? '';
+
+                  if (leaderUid == uid) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const RideReady()),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("그룹 리더만 라이딩 준비 페이지로 이동 가능합니다.")),
+                    );
+                  }
                 },
                 child: Container(
                   width: 200,
@@ -113,6 +140,7 @@ class MainScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 30),
 
               // 그룹 관리 페이지 이동 버튼 (inGroup에 따라 분기)
