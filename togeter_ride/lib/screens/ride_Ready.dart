@@ -1,4 +1,3 @@
-// 전체 수정된 RideReady 화면 코드
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,53 +17,86 @@ class _RideReadyState extends State<RideReady> {
   Map<String, String> memberStatuses = {};
   bool loading = true;
   bool selectAll = false;
-  String rideId = DateTime.now().millisecondsSinceEpoch.toString();
-  String? currentUid = FirebaseAuth.instance.currentUser?.uid;
+  String rideId = '';
+  String? currentUid;
 
   @override
   void initState() {
     super.initState();
+    currentUid = FirebaseAuth.instance.currentUser?.uid;
     _loadGroupInfo();
   }
 
   Future<void> _loadGroupInfo() async {
+    currentUid ??= FirebaseAuth.instance.currentUser?.uid;
     if (currentUid == null) {
       setState(() => loading = false);
       return;
     }
+
     try {
+      // 🔍 그룹 정보 로딩
       final query = await FirebaseFirestore.instance
           .collection('groups')
           .where('members', arrayContains: currentUid)
           .limit(1)
           .get();
+
       if (query.docs.isEmpty) {
         setState(() => loading = false);
-      } else {
-        final doc = query.docs.first;
-        final data = doc.data();
-        final fetchedGroupName = data['groupName'] as String? ?? '이름 없음';
-        final fetchedMemberUids = List<String>.from(data['members'] ?? []);
-        final selMap = <String, bool>{};
-        final statusMap = <String, String>{};
-
-        for (var m in fetchedMemberUids) {
-          selMap[m] = false;
-          statusMap[m] = "요청 전";
-        }
-        setState(() {
-          groupId = doc.id;
-          groupName = fetchedGroupName;
-          memberUids = fetchedMemberUids;
-          selectedMembers = selMap;
-          memberStatuses = statusMap;
-          loading = false;
-        });
+        return;
       }
+
+      final doc = query.docs.first;
+      final data = doc.data();
+      final fetchedGroupName = data['groupName'] as String? ?? '이름 없음';
+      final fetchedMemberUids = List<String>.from(data['members'] ?? []);
+      final selMap = <String, bool>{};
+      final statusMap = <String, String>{};
+      for (var m in fetchedMemberUids) {
+        selMap[m] = false;
+        statusMap[m] = "요청 전";
+      }
+
+      // ✅ rideId 처리
+      final rideQuery = await FirebaseFirestore.instance
+          .collection('ride_requests')
+          .where('leaderUid', isEqualTo: currentUid)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+
+      if (rideQuery.docs.isNotEmpty) {
+        final latestDoc = rideQuery.docs.first;
+        final data = latestDoc.data();
+        final status = data.containsKey('status') ? data['status'] : '';
+
+        if (status == '종료') {
+          // 새 라이딩 시작 준비
+          rideId = DateTime.now().millisecondsSinceEpoch.toString();
+        } else {
+          // 기존 라이딩 진행 중
+          rideId = latestDoc.id;
+          _listenToResponses(); // 기존 요청에 대한 응답 감시 시작
+        }
+      } else {
+        rideId = DateTime.now().millisecondsSinceEpoch.toString();
+      }
+
+      setState(() {
+        groupId = doc.id;
+        groupName = fetchedGroupName;
+        memberUids = fetchedMemberUids;
+        selectedMembers = selMap;
+        memberStatuses = statusMap;
+        loading = false;
+      });
     } catch (e) {
+      print("🔥 _loadGroupInfo 오류: $e");
       setState(() => loading = false);
     }
   }
+
 
   Future<String> _fetchNickname(String memberUid) async {
     try {
@@ -113,6 +145,17 @@ class _RideReadyState extends State<RideReady> {
       return;
     }
 
+    await FirebaseFirestore.instance
+        .collection('ride_requests')
+        .doc(rideId)
+        .set({
+      'leaderUid': currentUid,
+      'groupId': groupId,
+      'createdAt': FieldValue.serverTimestamp(),
+      'status': '대기중', // ✅ 필수 필드 추가
+    });
+
+
     for (String uid in chosen) {
       await FirebaseFirestore.instance
           .collection('ride_requests')
@@ -120,6 +163,8 @@ class _RideReadyState extends State<RideReady> {
           .collection('participants')
           .doc(uid)
           .set({
+        'uid': uid,
+        'groupName': groupName,
         'displayName': await _fetchNickname(uid),
         'status': '응답 대기중',
         'requestedAt': FieldValue.serverTimestamp(),
@@ -129,10 +174,49 @@ class _RideReadyState extends State<RideReady> {
       });
     }
 
+    _listenToResponses();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("${chosen.length}명에게 라이딩 요청 전송 완료")),
     );
   }
+
+  void _listenToResponses() {
+    FirebaseFirestore.instance
+        .collection('ride_requests')
+        .doc(rideId)
+        .collection('participants')
+        .snapshots()
+        .listen((snapshot) {
+      bool allResponded = true;
+      int acceptedCount = 0;
+
+      for (var doc in snapshot.docs) {
+        final uid = doc.id;
+        final data = doc.data();
+        if (data.containsKey('status')) {
+          final status = data['status'];
+          if (status == '응답 대기중') {
+            allResponded = false;
+          } else if (status == '수락') {
+            acceptedCount++;
+          }
+          setState(() {
+            memberStatuses[uid] = status;
+          });
+        }
+      }
+
+      // ✅ 모든 사람이 응답 완료 && 수락자 1명 이상이면 이동
+      if (allResponded && acceptedCount > 0) {
+        // 리더 포함한 인원이기 때문에 여기에 조건이 맞으면 이동
+        Future.delayed(const Duration(milliseconds: 500), () {
+          Navigator.pushReplacementNamed(context, '/riding');
+        });
+      }
+    });
+  }
+
 
   Color _statusColor(String status) {
     switch (status) {

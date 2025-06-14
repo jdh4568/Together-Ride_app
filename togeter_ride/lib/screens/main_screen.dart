@@ -5,11 +5,59 @@ import 'package:login/screens/post_Page.dart';
 import 'package:login/screens/ride_Ready.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:login/screens/my_group.dart';
+import 'package:login/screens/riding.dart';
+import '../User.dart';
 
-import '../User.dart'; // MyGroupPage 정의된 곳
-
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _monitorAcceptedRide();
+  }
+
+  void _monitorAcceptedRide() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    FirebaseFirestore.instance
+        .collectionGroup('participants')
+        .where('uid', isEqualTo: uid)
+        .where('status', isEqualTo: '수락')
+        .snapshots()
+        .listen((snapshot) async {
+      for (var doc in snapshot.docs) {
+        final rideDocRef = doc.reference.parent.parent;
+        if (rideDocRef != null) {
+          final rideSnapshot = await rideDocRef.get();
+          if (rideSnapshot.exists && rideSnapshot.data()?['status'] != '종료') {
+            if (mounted && ModalRoute.of(context)?.settings.name != '/riding') {
+              Navigator.pushReplacementNamed(context, '/riding');
+            }
+          }
+        }
+      }
+    });
+  }
+
+  Future<List<QueryDocumentSnapshot>> _fetchRideRequests() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return [];
+
+    final query = await FirebaseFirestore.instance
+        .collectionGroup('participants')
+        .where('uid', isEqualTo: uid)
+        .where('status', isEqualTo: '응답 대기중')
+        .get();
+
+    return query.docs;
+  }
 
   Future<UserModel?> _loadCurrentUser() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -18,7 +66,6 @@ class MainScreen extends StatelessWidget {
   }
 
   void _onGroupManagePressed(BuildContext context) async {
-    // 로딩 표시
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -30,7 +77,7 @@ class MainScreen extends StatelessWidget {
     } catch (e) {
       user = null;
     }
-    Navigator.pop(context); // 로딩 닫기
+    Navigator.pop(context);
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -40,47 +87,91 @@ class MainScreen extends StatelessWidget {
     }
 
     if (user.inGroup) {
-      // 이미 그룹에 가입된 경우: MyGroupPage로 이동
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => MyGroup()),
       );
     } else {
-      // 그룹 미가입 상태: GroupPage로 이동
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const GroupPage()),
       );
     }
   }
 
+  void _respondToRequest(DocumentReference ref, String response) async {
+    await ref.update({'status': response});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
-      appBar: AppBar(title: const Text("메인 화면"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text("메인 화면"),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  return FutureBuilder<List<QueryDocumentSnapshot>>(
+                    future: _fetchRideRequests(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(child: Text("수신된 메시지가 없습니다."));
+                      } else {
+                        final rideRequests = snapshot.data!;
+                        return ListView.builder(
+                          itemCount: rideRequests.length,
+                          itemBuilder: (context, index) {
+                            final data = rideRequests[index].data() as Map<String, dynamic>;
+                            final ref = rideRequests[index].reference;
+                            final groupName = data['groupName'] ?? '그룹';
+                            return ListTile(
+                              title: Text("$groupName에서 라이딩 요청을 보냈습니다."),
+                              subtitle: Row(
+                                children: [
+                                  TextButton(
+                                    onPressed: () => _respondToRequest(ref, '거절'),
+                                    child: const Text("거절"),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () => _respondToRequest(ref, '수락'),
+                                    child: const Text("수락"),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xffB3E5FC),
-              Color(0xff6BF8F3),
-            ],
+            colors: [Color(0xffB3E5FC), Color(0xff6BF8F3)],
           ),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 라이딩 페이지 이동 버튼
-              // 라이딩 페이지 이동 버튼
               GestureDetector(
                 onTap: () async {
                   final uid = FirebaseAuth.instance.currentUser?.uid;
                   if (uid == null) return;
 
-                  // Firestore에서 그룹 불러오기
                   final query = await FirebaseFirestore.instance
                       .collection('groups')
                       .where('members', arrayContains: uid)
@@ -128,9 +219,9 @@ class MainScreen extends StatelessWidget {
                   ),
                   child: Container(
                     margin: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xffF5F3F3),
+                      color: Color(0xffF5F3F3),
                     ),
                     alignment: Alignment.center,
                     child: const Text(
@@ -140,10 +231,7 @@ class MainScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(height: 30),
-
-              // 그룹 관리 페이지 이동 버튼 (inGroup에 따라 분기)
               GestureDetector(
                 onTap: () => _onGroupManagePressed(context),
                 child: Container(
@@ -166,8 +254,6 @@ class MainScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 50),
-
-              // 커뮤니티 게시판 이동 버튼
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
