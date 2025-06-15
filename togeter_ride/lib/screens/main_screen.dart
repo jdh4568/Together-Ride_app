@@ -107,6 +107,15 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: const Text("메인 화면"),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () async {
+            await FirebaseAuth.instance.signOut();
+            if (context.mounted) {
+              Navigator.pushReplacementNamed(context, '/');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -155,6 +164,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
